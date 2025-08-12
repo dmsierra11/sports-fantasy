@@ -27,10 +27,10 @@ export default function Index() {
             >
               Sign Up
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="lg"
-              className="border-white text-white hover:bg-white hover:text-gray-900 font-bold py-4 px-8 text-lg rounded-lg transition-all duration-200 transform hover:scale-105"
+              className="border-white text-white bg-transparent hover:bg-white hover:text-gray-900 font-bold py-4 px-8 text-lg rounded-lg transition-all duration-200 transform hover:scale-105"
             >
               Log In
             </Button>
