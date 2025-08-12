@@ -15,7 +15,10 @@ export default function Login() {
 
         <form className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Email Address
             </label>
             <input
@@ -27,7 +30,10 @@ export default function Login() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Password
             </label>
             <input
@@ -46,7 +52,10 @@ export default function Login() {
         <div className="text-center mt-6">
           <p className="text-gray-600">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-primary font-medium hover:underline">
+            <Link
+              to="/signup"
+              className="text-primary font-medium hover:underline"
+            >
               Sign Up
             </Link>
           </p>

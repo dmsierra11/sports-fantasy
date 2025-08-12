@@ -10,12 +10,17 @@ export default function SignUp() {
             YourLeague
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mt-4">Sign Up</h1>
-          <p className="text-gray-600 mt-2">Create your account to get started</p>
+          <p className="text-gray-600 mt-2">
+            Create your account to get started
+          </p>
         </div>
 
         <form className="space-y-6">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Full Name
             </label>
             <input
@@ -27,7 +32,10 @@ export default function SignUp() {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Email Address
             </label>
             <input
@@ -39,7 +47,10 @@ export default function SignUp() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Password
             </label>
             <input
@@ -58,7 +69,10 @@ export default function SignUp() {
         <div className="text-center mt-6">
           <p className="text-gray-600">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary font-medium hover:underline">
+            <Link
+              to="/login"
+              className="text-primary font-medium hover:underline"
+            >
               Log In
             </Link>
           </p>
