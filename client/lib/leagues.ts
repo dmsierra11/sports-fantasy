@@ -139,3 +139,26 @@ export const getLeagueByInviteCode = async (inviteCode: string): Promise<League>
   if (error) throw error;
   return data;
 };
+
+export interface Team {
+  id: string;
+  name: string;
+  league_id: string;
+  owner_id: string;
+  created_at: string;
+}
+
+// Get user's teams
+export const getUserTeams = async (): Promise<Team[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data, error } = await supabase
+    .from("teams")
+    .select("*")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+};

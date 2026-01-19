@@ -12,13 +12,14 @@ import {
   makePick, 
   getNextTeam,
   subscribeToChanges,
+  removeTeamFromDraft,
   type DraftData,
   type DraftTeam,
   type DraftPlayer,
   type DraftPick
 } from "@/lib/draft";
 import { getLeague, type League } from "@/lib/leagues";
-import { Users, Play, Trophy, AlertCircle, CheckCircle2, Clock, ArrowLeft } from "lucide-react";
+import { Users, Play, Trophy, AlertCircle, CheckCircle2, Clock, ArrowLeft, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,6 +40,12 @@ export default function Draft() {
   const [error, setError] = useState<string | null>(null);
   const [viewState, setViewState] = useState<ViewState>("registration");
   const { toast } = useToast();
+
+  // Check if current user is the commissioner
+  const isCommissioner = user && league?.commissioner_id === user.id;
+
+  // Helper to check if a team belongs to the current user
+  const isMyTeam = (team: DraftTeam) => user && team.owner_id === user.id;
 
   // Load league and initial state
   useEffect(() => {
@@ -225,6 +232,35 @@ export default function Draft() {
     }
   };
 
+  const handleRemoveTeam = async (team: DraftTeam) => {
+    if (!isCommissioner) {
+      setError("Only the commissioner can remove teams");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await removeTeamFromDraft(team.id);
+      toast({
+        title: "Team Removed",
+        description: `"${result.team_name}" has been removed from the draft`,
+      });
+      await loadDraftState();
+      await loadLeague(); // Refresh league to update team count
+    } catch (err: any) {
+      const errorMsg = err.message || "Failed to remove team";
+      setError(errorMsg);
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading && !draftData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -353,14 +389,28 @@ export default function Draft() {
                       <div
                         key={team.id}
                         className={cn(
-                          "flex items-center gap-2 text-sm",
-                          team.name === myTeamName && "font-semibold text-blue-600"
+                          "flex items-center justify-between gap-2 text-sm",
+                          isMyTeam(team) && "font-semibold text-blue-600"
                         )}
                       >
-                        <Users className="h-4 w-4" />
-                        {team.name}
-                        {team.name === myTeamName && (
-                          <Badge variant="secondary">You</Badge>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          {team.name}
+                          {isMyTeam(team) && (
+                            <Badge variant="secondary">You</Badge>
+                          )}
+                        </div>
+                        {isCommissioner && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleRemoveTeam(team)}
+                            disabled={loading}
+                            title="Remove team from draft"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         )}
                       </div>
                     ))}
@@ -387,28 +437,48 @@ export default function Draft() {
                     key={team.id}
                     className={cn(
                       "p-4 border rounded-lg",
-                      team.name === myTeamName && "border-blue-500 bg-blue-50"
+                      isMyTeam(team) && "border-blue-500 bg-blue-50"
                     )}
                   >
-                    <div className="flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      <span className="font-semibold">{team.name}</span>
-                      {team.name === myTeamName && (
-                        <Badge variant="secondary">You</Badge>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        <span className="font-semibold">{team.name}</span>
+                        {isMyTeam(team) && (
+                          <Badge variant="secondary">You</Badge>
+                        )}
+                      </div>
+                      {isCommissioner && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleRemoveTeam(team)}
+                          disabled={loading}
+                          title="Remove team from draft"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
-              <Button
-                onClick={handleStartDraft}
-                disabled={loading}
-                className="w-full"
-                size="lg"
-              >
-                <Play className="mr-2 h-4 w-4" />
-                Start Draft
-              </Button>
+              {isCommissioner ? (
+                <Button
+                  onClick={handleStartDraft}
+                  disabled={loading}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  Start Draft
+                </Button>
+              ) : (
+                <p className="text-center text-gray-500 text-sm">
+                  Waiting for the commissioner to start the draft...
+                </p>
+              )}
             </CardContent>
           </Card>
         )}
@@ -530,13 +600,13 @@ export default function Draft() {
                             key={team.id}
                             className={cn(
                               "border rounded-lg p-4",
-                              team.name === myTeamName && "border-blue-500 bg-blue-50"
+                              isMyTeam(team) && "border-blue-500 bg-blue-50"
                             )}
                           >
                             <div className="flex items-center gap-2 mb-3">
                               <Users className="h-4 w-4" />
                               <span className="font-semibold">{team.name}</span>
-                              {team.name === myTeamName && (
+                              {isMyTeam(team) && (
                                 <Badge variant="secondary">You</Badge>
                               )}
                             </div>
