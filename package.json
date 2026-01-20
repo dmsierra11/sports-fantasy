@@ -18,7 +18,8 @@
     "start": "node dist/server/node-build.mjs",
     "test": "vitest --run",
     "format.fix": "prettier --write .",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "seed:mlb": "tsx scripts/seed-mlb-players.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.90.1",

@@ -12,6 +12,31 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+// Supported sports (extensible)
+export type Sport = "MLB" | "NFL" | "NBA" | "NHL";
+
+// Sport-specific position types for type safety when needed
+export type MLBPosition =
+  | "P"
+  | "SP"
+  | "RP"
+  | "CL"
+  | "C"
+  | "1B"
+  | "2B"
+  | "3B"
+  | "SS"
+  | "LF"
+  | "CF"
+  | "RF"
+  | "DH"
+  | "OF"
+  | "IF"
+  | "UT";
+export type NFLPosition = "QB" | "RB" | "WR" | "TE" | "K" | "DEF" | "LB" | "DB" | "DL";
+export type NBAPosition = "PG" | "SG" | "SF" | "PF" | "C" | "G" | "F" | "UT";
+export type NHLPosition = "C" | "LW" | "RW" | "D" | "G" | "F" | "UT";
+
 export interface Database {
   public: {
     Tables: {
@@ -52,6 +77,7 @@ export interface Database {
           draft_date: string | null;
           draft_status: "pending" | "in_progress" | "completed";
           invite_code: string | null;
+          sport: Sport;
           settings: Json;
           created_at: string;
           updated_at: string;
@@ -66,6 +92,7 @@ export interface Database {
           draft_date?: string | null;
           draft_status?: "pending" | "in_progress" | "completed";
           invite_code?: string | null;
+          sport?: Sport;
           settings?: Json;
           created_at?: string;
           updated_at?: string;
@@ -80,6 +107,7 @@ export interface Database {
           draft_date?: string | null;
           draft_status?: "pending" | "in_progress" | "completed";
           invite_code?: string | null;
+          sport?: Sport;
           settings?: Json;
           created_at?: string;
           updated_at?: string;
@@ -123,10 +151,12 @@ export interface Database {
           external_id: string | null;
           first_name: string;
           last_name: string;
-          position: "QB" | "RB" | "WR" | "TE" | "K" | "DEF";
-          team: string | null;
+          position: string; // Sport-agnostic: MLB (P, C, 1B, SS...), NFL (QB, RB...), etc.
+          pro_team: string | null; // Professional team abbreviation (NYY, LAD, etc.)
           jersey_number: number | null;
+          sport: Sport;
           stats: Json;
+          is_available: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -135,10 +165,12 @@ export interface Database {
           external_id?: string | null;
           first_name: string;
           last_name: string;
-          position: "QB" | "RB" | "WR" | "TE" | "K" | "DEF";
-          team?: string | null;
+          position: string;
+          pro_team?: string | null;
           jersey_number?: number | null;
+          sport?: Sport;
           stats?: Json;
+          is_available?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -147,10 +179,12 @@ export interface Database {
           external_id?: string | null;
           first_name?: string;
           last_name?: string;
-          position?: "QB" | "RB" | "WR" | "TE" | "K" | "DEF";
-          team?: string | null;
+          position?: string;
+          pro_team?: string | null;
           jersey_number?: number | null;
+          sport?: Sport;
           stats?: Json;
+          is_available?: boolean;
           created_at?: string;
           updated_at?: string;
         };
