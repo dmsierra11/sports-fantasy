@@ -174,6 +174,18 @@ export const resetDraft = async (): Promise<void> => {
   if (error) throw error;
 };
 
+// Remove team from draft (commissioner only)
+export const removeTeamFromDraft = async (
+  teamId: string
+): Promise<{ message: string; team_id: string; team_name: string; league_id: string }> => {
+  const { data, error } = await supabase.rpc("remove_team_from_draft", {
+    p_team_id: teamId,
+  });
+
+  if (error) throw error;
+  return data;
+};
+
 // Subscribe to draft changes
 export const subscribeToChanges = (
   callback: (data: DraftData) => void

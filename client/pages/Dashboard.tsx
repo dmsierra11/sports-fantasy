@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { CreateLeagueDialog } from "@/components/CreateLeagueDialog";
 import { JoinLeagueDialog } from "@/components/JoinLeagueDialog";
-import { getUserLeagues, generateInviteCode, type League } from "@/lib/leagues";
+import { getUserLeagues, getUserTeams, generateInviteCode, type League, type Team } from "@/lib/leagues";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
@@ -15,19 +15,40 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [leagues, setLeagues] = useState<League[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   useEffect(() => {
-    loadLeagues();
+    loadData();
   }, [user]);
+
+  const loadData = async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const [userLeagues, userTeams] = await Promise.all([
+        getUserLeagues(),
+        getUserTeams(),
+      ]);
+      setLeagues(userLeagues);
+      setTeams(userTeams);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadLeagues = async () => {
     if (!user) return;
     try {
-      setLoading(true);
       const userLeagues = await getUserLeagues();
       setLeagues(userLeagues);
     } catch (error: any) {
@@ -36,8 +57,6 @@ export default function Dashboard() {
         description: error.message || "Failed to load leagues",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -51,7 +70,7 @@ export default function Dashboard() {
   };
 
   const handleLeagueJoined = (league: League) => {
-    loadLeagues(); // Refresh to show the new league
+    loadData(); // Refresh to show the new league and team
   };
 
   const handleGenerateInviteCode = async (leagueId: string) => {
@@ -122,8 +141,10 @@ export default function Dashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">No teams yet</p>
+              <div className="text-2xl font-bold">{teams.length}</div>
+              <p className="text-xs text-muted-foreground">
+                {teams.length === 0 ? "No teams yet" : `${teams.length} team${teams.length !== 1 ? 's' : ''}`}
+              </p>
             </CardContent>
           </Card>
 
@@ -133,8 +154,14 @@ export default function Dashboard() {
               <Trophy className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">No active drafts</p>
+              <div className="text-2xl font-bold">
+                {leagues.filter((l) => l.draft_status === "in_progress").length}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {leagues.filter((l) => l.draft_status === "in_progress").length === 0
+                  ? "No active drafts"
+                  : `${leagues.filter((l) => l.draft_status === "in_progress").length} active draft${leagues.filter((l) => l.draft_status === "in_progress").length !== 1 ? 's' : ''}`}
+              </p>
             </CardContent>
           </Card>
         </div>
