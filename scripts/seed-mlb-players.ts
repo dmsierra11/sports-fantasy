@@ -177,6 +177,95 @@ function normalizePosition(position: string): string {
   return positionMap[position] || position;
 }
 
+/**
+ * Fetch pitching stats for a list of pitcher IDs and classify as SP/RP
+ * Uses the previous season's stats to determine pitcher role
+ */
+async function classifyPitchers(
+  players: PlayerInsert[]
+): Promise<Map<string, "SP" | "RP">> {
+  const pitcherClassifications = new Map<string, "SP" | "RP">();
+  const pitchers = players.filter((p) => p.position === "P");
+
+  if (pitchers.length === 0) return pitcherClassifications;
+
+  console.log(`\nClassifying ${pitchers.length} pitchers as SP/RP...`);
+
+  // Process in batches to avoid overwhelming the API
+  const BATCH_SIZE = 50;
+  let processed = 0;
+
+  for (let i = 0; i < pitchers.length; i += BATCH_SIZE) {
+    const batch = pitchers.slice(i, i + BATCH_SIZE);
+
+    // Fetch stats for each pitcher in parallel within the batch
+    const statsPromises = batch.map(async (pitcher) => {
+      const mlbId = (pitcher.stats as { mlb_id?: number }).mlb_id;
+      if (!mlbId) return null;
+
+      try {
+        // Try current season first, fall back to previous season
+        const seasons = [SEASON, SEASON - 1];
+        
+        for (const season of seasons) {
+          const response = await fetch(
+            `${MLB_API_BASE}/people/${mlbId}/stats?stats=season&season=${season}&group=pitching`
+          );
+
+          if (!response.ok) continue;
+
+          const data = await response.json();
+          const stats = data.stats?.[0]?.splits?.[0]?.stat;
+
+          if (stats && stats.gamesPlayed > 0) {
+            const gamesPlayed = stats.gamesPlayed || 0;
+            const gamesStarted = stats.gamesStarted || 0;
+
+            // Classify based on stats: SP if 50%+ games were starts
+            const role: "SP" | "RP" = 
+              gamesStarted > 0 && gamesStarted / gamesPlayed >= 0.5 ? "SP" : "RP";
+
+            return { external_id: pitcher.external_id, role };
+          }
+        }
+      } catch {
+        // Silently continue on error
+      }
+      return null;
+    });
+
+    const results = await Promise.all(statsPromises);
+
+    for (const result of results) {
+      if (result) {
+        pitcherClassifications.set(result.external_id, result.role);
+      }
+    }
+
+    processed += batch.length;
+    process.stdout.write(`\r  Processed ${processed}/${pitchers.length} pitchers...`);
+
+    // Small delay between batches
+    if (i + BATCH_SIZE < pitchers.length) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+  }
+
+  console.log("\n");
+
+  // Count classifications
+  const counts = { SP: 0, RP: 0 };
+  for (const role of pitcherClassifications.values()) {
+    counts[role]++;
+  }
+  console.log(`  Classified: ${counts.SP} SP, ${counts.RP} RP`);
+  console.log(
+    `  Unclassified (will remain as P): ${pitchers.length - pitcherClassifications.size}`
+  );
+
+  return pitcherClassifications;
+}
+
 // ============================================================================
 // Database Functions
 // ============================================================================
@@ -294,9 +383,21 @@ async function main() {
 
     console.log();
     console.log(`Total players fetched: ${allPlayers.length}`);
+
+    // Step 4: Classify pitchers as SP/RP/CL
+    const pitcherClassifications = await classifyPitchers(allPlayers);
+
+    // Apply classifications to players
+    for (const player of allPlayers) {
+      const classification = pitcherClassifications.get(player.external_id);
+      if (classification) {
+        player.position = classification;
+      }
+    }
+
     console.log();
 
-    // Step 4: Insert into database
+    // Step 5: Insert into database
     console.log("Inserting players into database...");
     const insertedCount = await insertPlayers(allPlayers);
 
@@ -305,7 +406,7 @@ async function main() {
     console.log(`Successfully seeded ${insertedCount} MLB players!`);
     console.log("=".repeat(60));
 
-    // Step 5: Show summary by position
+    // Step 6: Show summary by position
     const positionCounts: Record<string, number> = {};
     for (const player of allPlayers) {
       positionCounts[player.position] = (positionCounts[player.position] || 0) + 1;

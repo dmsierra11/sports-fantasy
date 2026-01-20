@@ -33,6 +33,10 @@ const CONTAINER_HEIGHT = 450;
 // Debounce delay for search input
 const SEARCH_DEBOUNCE_MS = 300;
 
+// MLB position categories
+const PITCHER_POSITIONS = new Set(["P", "SP", "RP"]);
+type PlayerCategory = "all" | "batters" | "pitchers";
+
 export function AvailablePlayersTable({
   players,
   onDraft,
@@ -42,6 +46,7 @@ export function AvailablePlayersTable({
   const parentRef = useRef<HTMLDivElement>(null);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<PlayerCategory>("all");
   const [positionFilter, setPositionFilter] = useState<string | null>(null);
 
   // Debounce search input
@@ -53,28 +58,46 @@ export function AvailablePlayersTable({
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Extract unique positions from players for dynamic filter buttons
+  // Extract unique positions from players, filtered by category
   const positions = useMemo(() => {
     const posSet = new Set<string>();
     players.forEach((p) => {
       if (p.position) {
-        posSet.add(p.position);
+        const isPitcher = PITCHER_POSITIONS.has(p.position);
+        // Only include positions that match the current category filter
+        if (
+          categoryFilter === "all" ||
+          (categoryFilter === "pitchers" && isPitcher) ||
+          (categoryFilter === "batters" && !isPitcher)
+        ) {
+          posSet.add(p.position);
+        }
       }
     });
     return Array.from(posSet).sort();
-  }, [players]);
+  }, [players, categoryFilter]);
 
-  // Filter players based on search and position
+  // Filter players based on search, category, and position
   const filteredPlayers = useMemo(() => {
     return players.filter((p) => {
       const matchesSearch = p.name
         .toLowerCase()
         .includes(debouncedSearch.toLowerCase());
+      
+      // Category filter (Batters vs Pitchers)
+      const isPitcher = p.position ? PITCHER_POSITIONS.has(p.position) : false;
+      const matchesCategory =
+        categoryFilter === "all" ||
+        (categoryFilter === "pitchers" && isPitcher) ||
+        (categoryFilter === "batters" && !isPitcher);
+      
+      // Specific position filter
       const matchesPosition =
         !positionFilter || p.position === positionFilter;
-      return matchesSearch && matchesPosition;
+      
+      return matchesSearch && matchesCategory && matchesPosition;
     });
-  }, [players, debouncedSearch, positionFilter]);
+  }, [players, debouncedSearch, categoryFilter, positionFilter]);
 
   // Set up virtualizer
   const rowVirtualizer = useVirtualizer({
@@ -87,10 +110,17 @@ export function AvailablePlayersTable({
   const clearFilters = () => {
     setSearchInput("");
     setDebouncedSearch("");
+    setCategoryFilter("all");
     setPositionFilter(null);
   };
 
-  const hasFilters = searchInput || positionFilter;
+  // Reset position filter when category changes (since positions are category-specific)
+  const handleCategoryChange = (category: PlayerCategory) => {
+    setCategoryFilter(category);
+    setPositionFilter(null); // Reset specific position when category changes
+  };
+
+  const hasFilters = searchInput || categoryFilter !== "all" || positionFilter;
 
   return (
     <Card>
@@ -128,20 +158,56 @@ export function AvailablePlayersTable({
             )}
           </div>
 
+          {/* Category Filter (Batters / Pitchers) */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={categoryFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleCategoryChange("all")}
+            >
+              All
+            </Button>
+            <Button
+              variant={categoryFilter === "batters" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleCategoryChange("batters")}
+            >
+              Batters
+            </Button>
+            <Button
+              variant={categoryFilter === "pitchers" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleCategoryChange("pitchers")}
+            >
+              Pitchers
+            </Button>
+            {hasFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-gray-500 ml-2"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Clear filters
+              </Button>
+            )}
+          </div>
+
           {/* Position Filter Buttons */}
           {positions.length > 0 && (
             <div className="flex flex-wrap gap-2">
               <Button
-                variant={positionFilter === null ? "default" : "outline"}
+                variant={positionFilter === null ? "secondary" : "outline"}
                 size="sm"
                 onClick={() => setPositionFilter(null)}
               >
-                All
+                All {categoryFilter === "batters" ? "Batters" : categoryFilter === "pitchers" ? "Pitchers" : "Positions"}
               </Button>
               {positions.map((pos) => (
                 <Button
                   key={pos}
-                  variant={positionFilter === pos ? "default" : "outline"}
+                  variant={positionFilter === pos ? "secondary" : "outline"}
                   size="sm"
                   onClick={() =>
                     setPositionFilter(positionFilter === pos ? null : pos)
@@ -150,17 +216,6 @@ export function AvailablePlayersTable({
                   {pos}
                 </Button>
               ))}
-              {hasFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="text-gray-500"
-                >
-                  <X className="h-3 w-3 mr-1" />
-                  Clear
-                </Button>
-              )}
             </div>
           )}
         </div>
