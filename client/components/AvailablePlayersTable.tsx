@@ -34,7 +34,7 @@ interface AvailablePlayersTableProps {
 
 // Row height for virtualization
 const ROW_HEIGHT = 48;
-const ROW_HEIGHT_MOBILE = 80;
+const ROW_HEIGHT_MOBILE = 100;
 // Container height for the scrollable area
 const CONTAINER_HEIGHT = 450;
 // Debounce delay for search input
@@ -230,12 +230,12 @@ export function AvailablePlayersTable({
                     }}
                   >
                     {isMobile ? (
-                      <div className="flex flex-col justify-center h-full py-1">
-                        <div className="flex items-center justify-between">
+                      <div className="flex flex-col justify-center h-full py-2 gap-1">
+                        <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm leading-tight">{player.name}</div>
+                            <div className="font-medium text-base leading-snug">{player.name}</div>
                             {player.position && (
-                              <Badge variant="secondary" className="text-xs mt-0.5">
+                              <Badge variant="secondary" className="text-xs mt-1">
                                 {player.position}
                               </Badge>
                             )}
@@ -244,15 +244,15 @@ export function AvailablePlayersTable({
                             size="sm"
                             onClick={() => onDraft(player.id, player.name)}
                             disabled={disabled || !isMyTurn}
-                            className="ml-2 shrink-0"
+                            className="shrink-0 h-9"
                           >
                             Draft
                           </Button>
                         </div>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-600">
-                          <span>AVG: <span className="font-medium">{stats.avg.toFixed(3)}</span></span>
-                          <span>HR: <span className="font-medium">{stats.hr}</span></span>
-                          <span>RBI: <span className="font-medium">{stats.rbi}</span></span>
+                        <div className="flex items-center gap-4 text-xs text-gray-600 bg-gray-50 rounded px-2 py-1">
+                          <span>AVG: <span className="font-semibold text-gray-900">{stats.avg.toFixed(3)}</span></span>
+                          <span>HR: <span className="font-semibold text-gray-900">{stats.hr}</span></span>
+                          <span>RBI: <span className="font-semibold text-gray-900">{stats.rbi}</span></span>
                         </div>
                       </div>
                     ) : (
