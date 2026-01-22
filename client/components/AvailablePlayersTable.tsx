@@ -34,7 +34,7 @@ interface AvailablePlayersTableProps {
 
 // Row height for virtualization
 const ROW_HEIGHT = 48;
-const ROW_HEIGHT_MOBILE = 100;
+const ROW_HEIGHT_MOBILE = 88;
 // Container height for the scrollable area
 const CONTAINER_HEIGHT = 450;
 // Debounce delay for search input
@@ -230,29 +230,29 @@ export function AvailablePlayersTable({
                     }}
                   >
                     {isMobile ? (
-                      <div className="flex flex-col justify-center h-full py-2 gap-1">
-                        <div className="flex items-start justify-between gap-2">
+                      <div className="h-full flex flex-col justify-center py-2 px-1">
+                        <div className="flex items-center justify-between gap-2 mb-1">
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-base leading-snug">{player.name}</div>
-                            {player.position && (
-                              <Badge variant="secondary" className="text-xs mt-1">
-                                {player.position}
-                              </Badge>
-                            )}
+                            <div className="font-medium text-sm truncate">{player.name}</div>
                           </div>
                           <Button
                             size="sm"
                             onClick={() => onDraft(player.id, player.name)}
                             disabled={disabled || !isMyTurn}
-                            className="shrink-0 h-9"
+                            className="shrink-0"
                           >
                             Draft
                           </Button>
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-gray-600 bg-gray-50 rounded px-2 py-1">
-                          <span>AVG: <span className="font-semibold text-gray-900">{stats.avg.toFixed(3)}</span></span>
-                          <span>HR: <span className="font-semibold text-gray-900">{stats.hr}</span></span>
-                          <span>RBI: <span className="font-semibold text-gray-900">{stats.rbi}</span></span>
+                        <div className="flex items-center gap-1.5 text-xs overflow-hidden">
+                          {player.position && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                              {player.position}
+                            </Badge>
+                          )}
+                          <span className="text-gray-500 whitespace-nowrap">
+                            .{stats.avg.toFixed(3).slice(2)} | {stats.hr}HR | {stats.rbi}RBI
+                          </span>
                         </div>
                       </div>
                     ) : (
